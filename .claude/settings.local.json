@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-expo-app@latest .)",
+      "Read(//c//**)",
+      "Bash(npm install:*)",
+      "Bash(npx expo:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
