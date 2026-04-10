@@ -24,6 +24,7 @@ export const useTripStore = create<TripStore>((set) => ({
           lat: l.coords.latitude,
           lng: l.coords.longitude,
           speed: Math.max(0, (l.coords.speed ?? 0) * 3.6), // m/s → km/h
+          altitude: l.coords.altitude ?? 0,
           timestamp: l.timestamp,
         })),
       ],

@@ -23,13 +23,21 @@ export default function PaywallScreen() {
   const handlePurchase = () => {
     // TODO: wire up react-native-purchases in EAS dev build
     // await Purchases.purchaseProduct(selected);
-    router.back();
+    router.replace('/(tabs)');
+  };
+
+  const handleClose = () => {
+    try {
+      router.back();
+    } catch {
+      router.replace('/(tabs)');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Close */}
-      <Pressable onPress={() => router.back()} hitSlop={12} style={styles.closeBtn}>
+      <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn}>
         <Text style={styles.closeText}>✕</Text>
       </Pressable>
 
@@ -84,6 +92,9 @@ export default function PaywallScreen() {
         </Pressable>
         <Pressable hitSlop={8}>
           <Text style={styles.restoreText}>Restore Purchases</Text>
+        </Pressable>
+        <Pressable onPress={handleClose} hitSlop={8}>
+          <Text style={styles.maybeLaterText}>Maybe later</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -144,4 +155,5 @@ const styles = StyleSheet.create({
   },
   ctaText: { color: '#0A0A0F', fontSize: 17, fontWeight: '700' },
   restoreText: { color: '#8E8EA0', fontSize: 13 },
+  maybeLaterText: { color: '#3A3A4A', fontSize: 13 },
 });

@@ -54,6 +54,14 @@ export default function DashboardScreen() {
           </View>
         )}
 
+        {/* Altitude tile — shown while tracking */}
+        {isTracking && (
+          <View style={styles.altitudeTile}>
+            <Text style={styles.altitudeValue}>{Math.round(liveStats.altitude)} m</Text>
+            <Text style={styles.altitudeLabel}>Altitude</Text>
+          </View>
+        )}
+
         {/* CTA button */}
         <Pressable
           style={[styles.tripButton, isTracking && styles.tripButtonStop]}
@@ -109,8 +117,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   scroll: {
-    paddingBottom: 32,
+    paddingBottom: 112, // space for floating tab bar (68) + 24 margin + 20 extra
   },
+  altitudeTile: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    backgroundColor: '#14141C',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+  },
+  altitudeValue: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
+  altitudeLabel: { color: '#8E8EA0', fontSize: 12, marginTop: 4 },
   gaugeContainer: {
     alignItems: 'center',
     paddingVertical: 28,

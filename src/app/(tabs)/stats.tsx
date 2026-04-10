@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   headerSub: { color: '#8E8EA0', fontSize: 14 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingBottom: 112 },
   highlightCard: {
     backgroundColor: '#14141C',
     borderRadius: 16,

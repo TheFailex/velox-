@@ -2,6 +2,7 @@ export interface GPSPoint {
   lat: number;
   lng: number;
   speed: number;       // km/h
+  altitude: number;    // meters above sea level
   timestamp: number;   // Unix ms
 }
 

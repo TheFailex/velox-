@@ -11,6 +11,7 @@ export interface LiveStats {
   duration: number;   // seconds
   topSpeed: number;   // km/h
   avgSpeed: number;   // km/h
+  altitude: number;   // meters above sea level
 }
 
 const EMPTY_STATS: LiveStats = {
@@ -19,6 +20,7 @@ const EMPTY_STATS: LiveStats = {
   duration: 0,
   topSpeed: 0,
   avgSpeed: 0,
+  altitude: 0,
 };
 
 export function useTrip() {
@@ -45,6 +47,7 @@ export function useTrip() {
           duration: elapsed,
           topSpeed: gpsPoints.reduce((max, p) => Math.max(max, p.speed), 0),
           avgSpeed: gpsPoints.reduce((sum, p) => sum + p.speed, 0) / gpsPoints.length,
+          altitude: gpsPoints[gpsPoints.length - 1].altitude,
         };
 
   const startTrip = useCallback(async () => {

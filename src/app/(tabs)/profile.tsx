@@ -275,6 +275,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     paddingVertical: 16,
+    marginBottom: 80,
   },
   // Modal
   modalOverlay: {
