@@ -5,7 +5,17 @@
       "Read(//c//**)",
       "Bash(npm install:*)",
       "Bash(npx expo:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(eas build:logs 7516a250-8e66-4b54-961a-7bef8dd749cf)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(./gradlew assembleDebug --no-daemon)",
+      "Bash(GRADLE_OPTS=\"-Dfile.encoding=UTF-8\" ./gradlew :app:compileDebugKotlin)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(grep -v \"^$\")",
+      "Bash(ls c:/Dev/Velox/src/services/supabase*)",
+      "Bash(eas env:list)",
+      "Bash(eas env:list --environment production)",
+      "Bash(eas env:list --environment preview)"
     ]
   }
 }

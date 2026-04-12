@@ -120,7 +120,7 @@ export default function ProfileScreen() {
         <Text style={styles.version}>Velox v{version}</Text>
       </ScrollView>
 
-      {/* Vehicle edit modal */}
+    {/* Vehicle edit modal */}
       <Modal visible={editVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>

@@ -1,4 +1,4 @@
-import { FlatList, View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { FlatList, View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -8,12 +8,29 @@ import { tripsService } from '@/services/supabase';
 import type { Trip } from '@/types';
 
 export default function HistoryScreen() {
-  const { data: trips = [], isLoading, isFetching, refetch } = useQuery<Trip[]>({
+  const { data: trips = [], isLoading, isError, isFetching, refetch } = useQuery<Trip[]>({
     queryKey: ['trips'],
     queryFn: () => tripsService.list() as Promise<Trip[]>,
+    retry: 1,
   });
 
   if (isLoading) return <LoadingState />;
+
+  if (isError) return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>History</Text>
+      </View>
+      <View style={styles.empty}>
+        <Text style={styles.emptyIcon}>⚠️</Text>
+        <Text style={styles.emptyTitle}>Could not load trips</Text>
+        <Text style={styles.emptySub}>Check your connection and Supabase configuration.</Text>
+        <Pressable onPress={() => refetch()} style={styles.retryBtn}>
+          <Text style={styles.retryText}>Retry</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -115,4 +132,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: '#00C896',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  retryText: { color: '#0A0A0F', fontWeight: '700', fontSize: 15 },
 });

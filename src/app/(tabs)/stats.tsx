@@ -1,14 +1,38 @@
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStats } from '@/hooks/useStats';
+import { useTabFocus } from './_layout';
 import { WeeklyChart } from '@/components/stats/WeeklyChart';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { formatDistance, formatDuration, formatSpeed } from '@/utils/format';
 
 export default function StatsScreen() {
-  const { stats, trips, isLoading } = useStats();
+  const { stats, trips, isLoading, isError, refetch } = useStats();
+  const activeTab = useTabFocus();
+
+  // Stats is tab index 2 — refetch every time the user swipes to it
+  useEffect(() => {
+    if (activeTab === 2) refetch();
+  }, [activeTab]);
 
   if (isLoading) return <LoadingState />;
+
+  if (isError) return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Stats</Text>
+      </View>
+      <View style={styles.empty}>
+        <Text style={styles.emptyIcon}>⚠️</Text>
+        <Text style={styles.emptyTitle}>Could not load stats</Text>
+        <Text style={styles.emptySub}>Check your connection and Supabase configuration.</Text>
+        <Pressable onPress={() => refetch()} style={styles.retryBtn}>
+          <Text style={styles.retryText}>Retry</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
 
   const hasData = stats.totalTrips > 0;
 
@@ -173,4 +197,12 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48, marginBottom: 8 },
   emptyTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '600' },
   emptySub: { color: '#8E8EA0', fontSize: 14, textAlign: 'center' },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: '#00C896',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  retryText: { color: '#0A0A0F', fontWeight: '700', fontSize: 15 },
 });

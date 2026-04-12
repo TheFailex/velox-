@@ -2,14 +2,21 @@ import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
 export const initRevenueCat = async (userId?: string) => {
-  if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-
   const apiKey = Platform.select({
-    ios: process.env.EXPO_PUBLIC_RC_IOS_KEY!,
-    android: process.env.EXPO_PUBLIC_RC_ANDROID_KEY!,
-  })!;
+    ios: process.env.EXPO_PUBLIC_RC_IOS_KEY,
+    android: process.env.EXPO_PUBLIC_RC_ANDROID_KEY,
+  });
 
-  await Purchases.configure({ apiKey, appUserID: userId });
+  // Skip initialization if no key configured — avoids 401 spam in logs
+  if (!apiKey || apiKey.trim() === '') return;
+
+  Purchases.setLogLevel(LOG_LEVEL.ERROR);
+
+  try {
+    Purchases.configure({ apiKey, appUserID: userId });
+  } catch {
+    // Silently fail — app works without RevenueCat (all users treated as free)
+  }
 };
 
 export const checkPremium = async (): Promise<boolean> => {

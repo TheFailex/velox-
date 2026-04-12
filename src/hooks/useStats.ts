@@ -3,9 +3,10 @@ import { tripsService } from '@/services/supabase';
 import type { Trip, UserStats } from '@/types';
 
 export function useStats() {
-  const { data: trips = [], isLoading } = useQuery<Trip[]>({
+  const { data: trips = [], isLoading, isError, refetch } = useQuery<Trip[]>({
     queryKey: ['trips', 'all'],
     queryFn: () => tripsService.list(1000) as Promise<Trip[]>,
+    retry: 1,
   });
 
   const stats: UserStats = {
@@ -19,5 +20,5 @@ export function useStats() {
         : 0,
   };
 
-  return { stats, trips, isLoading };
+  return { stats, trips, isLoading, isError, refetch };
 }

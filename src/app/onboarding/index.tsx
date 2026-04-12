@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Dimensions,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -18,14 +20,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { locationService } from '@/services/location';
 import { supabase, profilesService } from '@/services/supabase';
 import { ONBOARDING_KEY } from '@/app/_layout';
+import { LoadingState } from '@/components/shared/LoadingState';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const VEHICLE_TYPES = ['Car', 'Motorcycle', 'Truck', 'Van'] as const;
 const TOTAL_STEPS = 5;
 
-// Steps: 0=Welcome, 1=Auth, 2=Location, 3=Vehicle, 4=Done→paywall
-
 export default function OnboardingScreen() {
+  const scrollRef = useRef<ScrollView>(null);
   const [step, setStep] = useState(0);
+  // null = not yet loaded from storage
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
 
   // Auth
   const [email, setEmail] = useState('');
@@ -38,7 +43,66 @@ export default function OnboardingScreen() {
   const [vehicleType, setVehicleType] = useState<string>('Car');
   const [vehicleSaving, setVehicleSaving] = useState(false);
 
-  const goBack = () => setStep((s) => Math.max(0, s - 1));
+  // On mount: check if user already completed onboarding before (re-login case)
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
+      const done = val === '1';
+      setOnboardingDone(done);
+      if (done) {
+        setStep(1);
+        // Scroll to auth step without animation once the view renders
+        setTimeout(() => {
+          scrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: false });
+        }, 0);
+      }
+    });
+  }, []);
+
+  // Listen for auth state changes — handles both email and Google sign-in
+  useEffect(() => {
+    if (onboardingDone === null) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== 'SIGNED_IN' || !session) return;
+
+      if (onboardingDone) {
+        // User already set up — go straight to the app
+        router.replace('/(tabs)');
+      } else {
+        // First-time: advance to location permissions step
+        goToStep(2);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [onboardingDone]);
+
+  const goToStep = (newStep: number) => {
+    setStep(newStep);
+    scrollRef.current?.scrollTo({ x: newStep * SCREEN_WIDTH, animated: true });
+  };
+
+  const goBack = () => {
+    if (step > 0) goToStep(step - 1);
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: 'velox://auth/callback', skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        await Linking.openURL(data.url);
+      }
+    } catch (e: any) {
+      Alert.alert(
+        'Google Sign In',
+        'To enable Google sign-in, configure Google OAuth in your Supabase dashboard under Authentication → Providers.',
+      );
+    }
+  };
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
@@ -54,7 +118,7 @@ export default function OnboardingScreen() {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
       }
-      setStep(2);
+      // Navigation is handled by the onAuthStateChange listener above
     } catch (e: any) {
       Alert.alert('Auth Error', e.message ?? 'Something went wrong. Please try again.');
     } finally {
@@ -62,9 +126,12 @@ export default function OnboardingScreen() {
     }
   };
 
+  // Don't render until we know whether onboarding was previously completed
+  if (onboardingDone === null) return <LoadingState />;
+
   const handlePermissions = async () => {
     await locationService.requestPermissions();
-    setStep(3);
+    goToStep(3);
   };
 
   const handleVehicle = async () => {
@@ -75,11 +142,11 @@ export default function OnboardingScreen() {
         vehicle_type: vehicleType,
       });
     } catch {
-      // non-fatal — profile can be updated later
+      // non-fatal
     } finally {
       setVehicleSaving(false);
     }
-    setStep(4);
+    goToStep(4);
   };
 
   const handleFinish = async () => {
@@ -101,36 +168,57 @@ export default function OnboardingScreen() {
         <View style={[styles.progressFill, { width: `${((step + 1) / TOTAL_STEPS) * 100}%` }]} />
       </View>
 
-      {step === 0 && <StepWelcome onNext={() => setStep(1)} />}
-      {step === 1 && (
-        <StepAuth
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          isSignUp={isSignUp}
-          setIsSignUp={setIsSignUp}
-          loading={authLoading}
-          onSubmit={handleAuth}
-        />
-      )}
-      {step === 2 && <StepLocation onNext={handlePermissions} onSkip={() => setStep(3)} />}
-      {step === 3 && (
-        <StepVehicle
-          vehicleName={vehicleName}
-          setVehicleName={setVehicleName}
-          vehicleType={vehicleType}
-          setVehicleType={setVehicleType}
-          loading={vehicleSaving}
-          onFinish={handleVehicle}
-        />
-      )}
-      {step === 4 && <StepReady onFinish={handleFinish} />}
+      {/* Horizontally paged scroll — provides the slide animation */}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        scrollEnabled={false}
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        style={styles.pager}
+      >
+        {/* Step 0 — Welcome */}
+        <View style={styles.page}>
+          <StepWelcome onNext={() => goToStep(1)} />
+        </View>
+
+        {/* Step 1 — Auth */}
+        <View style={styles.page}>
+          <StepAuth
+            email={email} setEmail={setEmail}
+            password={password} setPassword={setPassword}
+            isSignUp={isSignUp} setIsSignUp={setIsSignUp}
+            loading={authLoading}
+            onSubmit={handleAuth}
+            onGoogle={handleGoogleSignIn}
+          />
+        </View>
+
+        {/* Step 2 — Location */}
+        <View style={styles.page}>
+          <StepLocation onNext={handlePermissions} onSkip={() => goToStep(3)} />
+        </View>
+
+        {/* Step 3 — Vehicle */}
+        <View style={styles.page}>
+          <StepVehicle
+            vehicleName={vehicleName} setVehicleName={setVehicleName}
+            vehicleType={vehicleType} setVehicleType={setVehicleType}
+            loading={vehicleSaving} onFinish={handleVehicle}
+          />
+        </View>
+
+        {/* Step 4 — Ready */}
+        <View style={styles.page}>
+          <StepReady onFinish={handleFinish} />
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Steps ──────────────────────────────────────────────────────────────────
+// ─── Steps ───────────────────────────────────────────────────────────────────
 
 function StepWelcome({ onNext }: { onNext: () => void }) {
   return (
@@ -149,7 +237,7 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
           { icon: '📍', text: 'Real-time GPS tracking' },
           { icon: '📊', text: 'Driving score & stats' },
           { icon: '🤖', text: 'Weekly AI insights' },
-          { icon: '⛰️', text: 'Altitude & tilt for motos' },
+          { icon: '⛰️', text: 'Altitude & inclination data' },
         ].map((f) => (
           <View key={f.text} style={styles.featureRow}>
             <Text style={styles.featureIcon}>{f.icon}</Text>
@@ -166,12 +254,12 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
 
 function StepAuth({
   email, setEmail, password, setPassword,
-  isSignUp, setIsSignUp, loading, onSubmit,
+  isSignUp, setIsSignUp, loading, onSubmit, onGoogle,
 }: {
   email: string; setEmail: (v: string) => void;
   password: string; setPassword: (v: string) => void;
   isSignUp: boolean; setIsSignUp: (v: boolean) => void;
-  loading: boolean; onSubmit: () => void;
+  loading: boolean; onSubmit: () => void; onGoogle: () => void;
 }) {
   return (
     <KeyboardAvoidingView
@@ -185,9 +273,20 @@ function StepAuth({
         <Text style={styles.title}>{isSignUp ? 'Create Account' : 'Welcome Back'}</Text>
         <Text style={styles.body}>
           {isSignUp
-            ? 'Your trips and stats are synced to the cloud — create an account to keep them safe.'
+            ? 'Your trips are synced to the cloud — create an account to keep them safe.'
             : 'Sign in to access your trips and stats.'}
         </Text>
+
+        {/* Google button */}
+        <Pressable style={styles.googleBtn} onPress={onGoogle}>
+          <Text style={styles.googleBtnText}>🇬  Continue with Google</Text>
+        </Pressable>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
@@ -296,8 +395,7 @@ function StepVehicle({
             style={[styles.typeChip, vehicleType === t && styles.typeChipSelected]}
           >
             <Text style={[styles.typeChipText, vehicleType === t && styles.typeChipTextSelected]}>
-              {t === 'Car' ? '🚗' : t === 'Motorcycle' ? '🏍️' : t === 'Truck' ? '🚛' : '🚐'}{' '}
-              {t}
+              {t === 'Car' ? '🚗' : t === 'Motorcycle' ? '🏍️' : t === 'Truck' ? '🚛' : '🚐'}{' '}{t}
             </Text>
           </Pressable>
         ))}
@@ -325,7 +423,7 @@ function StepReady({ onFinish }: { onFinish: () => void }) {
       </View>
       <Text style={styles.title}>You're all set!</Text>
       <Text style={styles.body}>
-        Velox is ready to track your drives. Unlock premium to get weekly AI insights, unlimited
+        Velox is ready to track your drives. Unlock Premium to get weekly AI insights, unlimited
         history, and more.
       </Text>
       <Pressable style={styles.primaryBtn} onPress={onFinish}>
@@ -358,14 +456,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#00C896',
     borderRadius: 2,
   },
+  pager: {
+    flex: 1,
+    marginTop: 8,
+  },
+  page: {
+    width: SCREEN_WIDTH,
+    flex: 1,
+  },
   step: {
     flex: 1,
+    width: SCREEN_WIDTH,
     paddingHorizontal: 28,
-    paddingTop: 40,
+    paddingTop: 32,
     paddingBottom: 16,
     justifyContent: 'center',
   },
-  illustration: { alignItems: 'center', marginBottom: 32 },
+  illustration: { alignItems: 'center', marginBottom: 28 },
   illustrationIcon: { fontSize: 80 },
   title: {
     color: '#FFFFFF',
@@ -384,13 +491,29 @@ const styles = StyleSheet.create({
     color: '#8E8EA0',
     fontSize: 16,
     lineHeight: 24,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   accent: { color: '#00C896', fontWeight: '600' },
-  featureList: { gap: 12, marginBottom: 36 },
+  featureList: { gap: 12, marginBottom: 32 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   featureIcon: { fontSize: 20, width: 28, textAlign: 'center' },
   featureText: { color: '#FFFFFF', fontSize: 15 },
+  googleBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  googleBtnText: { color: '#0A0A0F', fontSize: 16, fontWeight: '600' },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
+  dividerText: { color: '#8E8EA0', fontSize: 13 },
   inputLabel: {
     color: '#8E8EA0',
     fontSize: 11,
@@ -409,7 +532,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
     marginBottom: 16,
   },
-  typeRow: { flexDirection: 'row', gap: 10, marginBottom: 32, flexWrap: 'wrap' },
+  typeRow: { flexDirection: 'row', gap: 10, marginBottom: 28, flexWrap: 'wrap' },
   typeChip: {
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -418,10 +541,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
   },
-  typeChipSelected: {
-    backgroundColor: 'rgba(0,200,150,0.12)',
-    borderColor: '#00C896',
-  },
+  typeChipSelected: { backgroundColor: 'rgba(0,200,150,0.12)', borderColor: '#00C896' },
   typeChipText: { color: '#8E8EA0', fontSize: 14 },
   typeChipTextSelected: { color: '#00C896', fontWeight: '600' },
   primaryBtn: {

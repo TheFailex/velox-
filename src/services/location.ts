@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
-import { Platform, Alert, Linking } from 'react-native';
+import { Platform, Alert, Linking, NativeModules } from 'react-native';
 import { useTripStore } from '@/store/tripStore';
+import { totalDistanceKm } from '@/utils/distance';
 
 const TRIP_TRACKING_TASK = 'VELOX_TRIP_TRACKING';
 
@@ -12,7 +13,26 @@ TaskManager.defineTask(TRIP_TRACKING_TASK, async ({ data, error }) => {
     return;
   }
   const { locations } = data as { locations: Location.LocationObject[] };
-  useTripStore.getState().addGPSPoints(locations);
+  const store = useTripStore.getState();
+  store.addGPSPoints(locations);
+
+  // Update the foreground-service notification in-place via the native module.
+  // NativeModules.TripNotification finds expo-location's notification by channel ID
+  // and replaces its content — one notification, no pop, no flicker.
+  if (store.startTime) {
+    try {
+      const gpsPoints = useTripStore.getState().gpsPoints;
+      if (gpsPoints.length > 0) {
+        const lastPoint = gpsPoints[gpsPoints.length - 1];
+        const speed = Math.round(lastPoint.speed);
+        const distance = totalDistanceKm(gpsPoints);
+        const elapsed = Math.floor((Date.now() - store.startTime) / 1000);
+        NativeModules.TripNotification?.update(speed, distance, elapsed);
+      }
+    } catch (e) {
+      console.warn('[Velox] Notification update failed:', e);
+    }
+  }
 });
 
 export const locationService = {
@@ -57,12 +77,12 @@ export const locationService = {
   async startTracking(): Promise<void> {
     await Location.startLocationUpdatesAsync(TRIP_TRACKING_TASK, {
       accuracy: Location.Accuracy.BestForNavigation,
-      distanceInterval: 5,      // meters between updates
-      timeInterval: 2000,       // ms between updates
+      distanceInterval: 0,      // update regardless of movement
+      timeInterval: 1000,       // request 1s updates (Android may throttle in Doze)
       showsBackgroundLocationIndicator: true, // iOS blue bar
-      foregroundService: {      // Android foreground service notification
-        notificationTitle: 'Velox is tracking your trip',
-        notificationBody: 'Tap to open Velox',
+      foregroundService: {      // Android requires this to exist — kept minimal so it doesn't compete visually
+        notificationTitle: 'Velox',
+        notificationBody: 'GPS activo',
         notificationColor: '#00C896',
       },
     });

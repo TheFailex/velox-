@@ -6,7 +6,9 @@ interface TripStore {
   isTracking: boolean;
   gpsPoints: GPSPoint[];
   currentTrip: Partial<Trip> | null;
+  startTime: number | null;
   setTracking: (val: boolean) => void;
+  setStartTime: (time: number | null) => void;
   addGPSPoints: (locations: LocationObject[]) => void;
   resetTrip: () => void;
 }
@@ -15,7 +17,9 @@ export const useTripStore = create<TripStore>((set) => ({
   isTracking: false,
   gpsPoints: [],
   currentTrip: null,
+  startTime: null,
   setTracking: (val) => set({ isTracking: val }),
+  setStartTime: (time) => set({ startTime: time }),
   addGPSPoints: (locations) =>
     set((state) => ({
       gpsPoints: [
@@ -29,5 +33,5 @@ export const useTripStore = create<TripStore>((set) => ({
         })),
       ],
     })),
-  resetTrip: () => set({ gpsPoints: [], currentTrip: null, isTracking: false }),
+  resetTrip: () => set({ gpsPoints: [], currentTrip: null, isTracking: false, startTime: null }),
 }));

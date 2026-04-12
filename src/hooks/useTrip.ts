@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
+import { NativeModules } from 'react-native';
 import { useTripStore } from '@/store/tripStore';
 import { locationService } from '@/services/location';
 import { tripsService, supabase } from '@/services/supabase';
 import { totalDistanceKm } from '@/utils/distance';
 import { scoreDrive } from '@/utils/scoring';
+import {
+  requestNotificationPermission,
+  setupNotifications,
+} from '@/services/notifications';
 
 export interface LiveStats {
   speed: number;      // current km/h (last GPS point)
@@ -24,8 +29,7 @@ const EMPTY_STATS: LiveStats = {
 };
 
 export function useTrip() {
-  const { isTracking, gpsPoints, setTracking, resetTrip } = useTripStore();
-  const [startTime, setStartTime] = useState<number | null>(null);
+  const { isTracking, gpsPoints, startTime, setTracking, setStartTime, resetTrip } = useTripStore();
   const [elapsed, setElapsed] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -53,16 +57,21 @@ export function useTrip() {
   const startTrip = useCallback(async () => {
     const granted = await locationService.requestPermissions();
     if (!granted) return;
+    await setupNotifications();
+    await requestNotificationPermission();
     const now = Date.now();
     setStartTime(now);
     setElapsed(0);
     setTracking(true);
     await locationService.startTracking();
-  }, [setTracking]);
+  }, [setTracking, setStartTime]);
 
   const stopTrip = useCallback(async () => {
     setTracking(false);
     await locationService.stopTracking();
+    // Foreground-service notification auto-dismisses when the location service stops.
+    // Call dismiss() as a safety net in case any residual notification remains.
+    NativeModules.TripNotification?.dismiss();
 
     if (gpsPoints.length > 1 && startTime) {
       setIsSaving(true);
@@ -94,7 +103,6 @@ export function useTrip() {
     }
 
     resetTrip();
-    setStartTime(null);
     setElapsed(0);
   }, [gpsPoints, startTime, setTracking, resetTrip]);
 
