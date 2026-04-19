@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delete Your Account – Velox</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0A0A0F;
+      color: #FFFFFF;
+      line-height: 1.7;
+      padding: 40px 20px 80px;
+    }
+
+    .wrap { max-width: 680px; margin: 0 auto; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,75,75,0.12);
+      border: 1px solid rgba(255,75,75,0.35);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #FF4B4B;
+      letter-spacing: 0.8px;
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+
+    .lead {
+      color: #8E8EA0;
+      font-size: 16px;
+      margin-bottom: 48px;
+    }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #00C896;
+      margin: 40px 0 14px;
+    }
+
+    p { color: #C8C8D8; font-size: 15px; margin-bottom: 14px; }
+
+    ol, ul {
+      color: #C8C8D8;
+      font-size: 15px;
+      padding-left: 22px;
+      margin-bottom: 14px;
+    }
+
+    li { margin-bottom: 10px; }
+
+    .step-card {
+      background: #14141C;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      min-width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0,200,150,0.15);
+      border: 1px solid rgba(0,200,150,0.3);
+      color: #00C896;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .step-body strong { color: #FFFFFF; display: block; margin-bottom: 4px; font-size: 15px; }
+    .step-body span { color: #8E8EA0; font-size: 14px; }
+
+    .warning-card {
+      background: rgba(255,75,75,0.06);
+      border: 1px solid rgba(255,75,75,0.25);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin: 28px 0;
+    }
+
+    .warning-card p { color: #C8C8D8; margin: 0; }
+    .warning-card strong { color: #FF4B4B; }
+
+    .contact-card {
+      background: #14141C;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-top: 40px;
+    }
+
+    a { color: #00C896; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    hr { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 48px 0 0; }
+    .footer { color: #3A3A4A; font-size: 13px; text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="badge">⚠ ACCOUNT DELETION</div>
+    <h1>Delete Your Account</h1>
+    <p class="lead">
+      You can request full deletion of your Velox account and all associated data at any time.
+      This page explains what gets deleted, what is kept, and how to submit your request.
+    </p>
+
+    <!-- How to request -->
+    <h2>How to request deletion</h2>
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Send an email to our support address</strong>
+        <span>Write to <a href="mailto:velox-app@zohomail.eu">velox-app@zohomail.eu</a> from the email address linked to your Velox account.</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Use the subject line: "Account deletion request"</strong>
+        <span>Include your registered email address in the body of the message so we can identify your account.</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>We will process your request within 30 days</strong>
+        <span>You will receive a confirmation email once your account and data have been permanently deleted.</span>
+      </div>
+    </div>
+
+    <!-- What gets deleted -->
+    <h2>What data is deleted</h2>
+    <p>Upon confirmed deletion, the following data is <strong style="color:#FF4B4B">permanently removed</strong>:</p>
+    <ul>
+      <li>Your account credentials (email and hashed password)</li>
+      <li>Your profile — username, country, speed unit, vehicle information</li>
+      <li>All trip records — routes, speeds, scores, and extended driving metrics</li>
+      <li>Weekly insights associated with your account</li>
+    </ul>
+
+    <!-- What is kept -->
+    <h2>What data may be retained</h2>
+    <p>The following may be retained for a limited period after deletion:</p>
+    <ul>
+      <li>
+        <strong>Subscription records</strong> — Google Play and RevenueCat retain purchase receipts
+        for legal and financial compliance. These records do not contain personal driving data
+        and are governed by their respective privacy policies.
+      </li>
+      <li>
+        <strong>Anonymised analytics</strong> — if any aggregated, non-identifiable data was
+        previously included in statistical summaries, it cannot be retroactively removed as it
+        contains no personal identifiers.
+      </li>
+    </ul>
+
+    <div class="warning-card">
+      <p>
+        <strong>⚠ Deletion is permanent.</strong> Once your account is deleted, your trip history,
+        driving scores, and all associated data cannot be recovered. Make sure to export
+        anything you want to keep before requesting deletion.
+      </p>
+    </div>
+
+    <!-- Subscription note -->
+    <h2>Active subscriptions</h2>
+    <p>
+      Deleting your Velox account does <strong style="color:#FFFFFF">not</strong> automatically
+      cancel an active Google Play subscription. To avoid future charges, cancel your subscription
+      separately through <strong style="color:#FFFFFF">Google Play → Subscriptions</strong> before
+      or after submitting your deletion request.
+    </p>
+
+    <!-- Contact -->
+    <div class="contact-card">
+      <h2 style="margin-top:0">Contact</h2>
+      <p>Questions about your data or this process?</p>
+      <p><a href="mailto:velox-app@zohomail.eu">velox-app@zohomail.eu</a></p>
+    </div>
+
+    <hr />
+    <p class="footer">&copy; 2026 Velox. All rights reserved.</p>
+
+  </div>
+</body>
+</html>
