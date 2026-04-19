@@ -41,6 +41,10 @@ export const locationService = {
     const { status: fg } = await Location.requestForegroundPermissionsAsync();
     if (fg !== 'granted') return false;
 
+    // If background permission is already granted, skip the dialog entirely
+    const { status: existingBg } = await Location.getBackgroundPermissionsAsync();
+    if (existingBg === 'granted') return true;
+
     // Step 2: background permission
     // Android 11+ does NOT show a dialog — it opens system Settings directly.
     // Always show an explanation Alert first or the user will be confused and deny.
@@ -75,6 +79,12 @@ export const locationService = {
   },
 
   async startTracking(): Promise<void> {
+    // Ensure no stale task from a previous session is still registered
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(TRIP_TRACKING_TASK);
+    if (isRegistered) {
+      await Location.stopLocationUpdatesAsync(TRIP_TRACKING_TASK);
+    }
+
     await Location.startLocationUpdatesAsync(TRIP_TRACKING_TASK, {
       accuracy: Location.Accuracy.BestForNavigation,
       distanceInterval: 0,      // update regardless of movement

@@ -1,4 +1,11 @@
-import { View, TouchableOpacity, StyleSheet, type ViewProps } from 'react-native';
+import { View, Pressable, StyleSheet, type ViewProps } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface CardProps extends ViewProps {
   onPress?: () => void;
@@ -6,13 +13,29 @@ interface CardProps extends ViewProps {
 }
 
 export function Card({ onPress, children, style, ...props }: CardProps) {
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   if (onPress) {
     return (
-      <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.7}>
+      <AnimatedPressable
+        style={[styles.card, style, animStyle]}
+        onPress={onPress}
+        onPressIn={() => {
+          scale.value = withSpring(0.97, { damping: 20, stiffness: 400 });
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, { damping: 20, stiffness: 400 });
+        }}
+      >
         {children}
-      </TouchableOpacity>
+      </AnimatedPressable>
     );
   }
+
   return (
     <View style={[styles.card, style]} {...props}>
       {children}

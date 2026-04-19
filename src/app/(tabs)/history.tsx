@@ -2,17 +2,27 @@ import { FlatList, View, Text, StyleSheet, RefreshControl, Pressable } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import Animated from 'react-native-reanimated';
 import { TripCard } from '@/components/trip/TripCard';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { tripsService } from '@/services/supabase';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useTabEntrance } from '@/hooks/useTabEntrance';
 import type { Trip } from '@/types';
 
+const FREE_TRIP_LIMIT = 1;
+
 export default function HistoryScreen() {
+  const entranceStyle = useTabEntrance(1);
+  const { isPremium } = useSubscription();
   const { data: trips = [], isLoading, isError, isFetching, refetch } = useQuery<Trip[]>({
     queryKey: ['trips'],
     queryFn: () => tripsService.list() as Promise<Trip[]>,
     retry: 1,
   });
+
+  const visibleTrips = isPremium ? trips : trips.slice(0, FREE_TRIP_LIMIT);
+  const lockedCount = trips.length - visibleTrips.length;
 
   if (isLoading) return <LoadingState />;
 
@@ -33,6 +43,7 @@ export default function HistoryScreen() {
   );
 
   return (
+    <Animated.View style={[{ flex: 1, backgroundColor: '#0A0A0F' }, entranceStyle]}>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
@@ -45,7 +56,7 @@ export default function HistoryScreen() {
       </View>
 
       <FlatList
-        data={trips}
+        data={visibleTrips}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) =>
           <TripCard
@@ -53,7 +64,7 @@ export default function HistoryScreen() {
             onPress={() => router.push(`/trip/${item.id}`)}
           />
         }
-        contentContainerStyle={trips.length === 0 ? styles.emptyContainer : styles.listContent}
+        contentContainerStyle={visibleTrips.length === 0 && lockedCount === 0 ? styles.emptyContainer : styles.listContent}
         refreshControl={
           <RefreshControl
             refreshing={isFetching && !isLoading}
@@ -63,8 +74,25 @@ export default function HistoryScreen() {
           />
         }
         ListEmptyComponent={<EmptyState />}
+        ListFooterComponent={lockedCount > 0 ? <UpgradeBanner lockedCount={lockedCount} /> : null}
       />
     </SafeAreaView>
+    </Animated.View>
+  );
+}
+
+function UpgradeBanner({ lockedCount }: { lockedCount: number }) {
+  return (
+    <Pressable style={styles.upgradeBanner} onPress={() => router.push('/paywall')}>
+      <Text style={styles.upgradeLock}>🔒</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.upgradeTitle}>
+          {lockedCount} more {lockedCount === 1 ? 'trip' : 'trips'} locked
+        </Text>
+        <Text style={styles.upgradeSub}>Upgrade to Premium to unlock your full history</Text>
+      </View>
+      <Text style={styles.upgradeArrow}>›</Text>
+    </Pressable>
   );
 }
 
@@ -140,4 +168,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   retryText: { color: '#0A0A0F', fontWeight: '700', fontSize: 15 },
+  upgradeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#14141C',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,200,150,0.25)',
+  },
+  upgradeLock: { fontSize: 22 },
+  upgradeTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  upgradeSub: { color: '#8E8EA0', fontSize: 12, marginTop: 2 },
+  upgradeArrow: { color: '#00C896', fontSize: 22, fontWeight: '300' },
 });

@@ -13,6 +13,14 @@ interface TripStore {
   resetTrip: () => void;
 }
 
+function isValidCoord(lat: number, lng: number): boolean {
+  return (
+    isFinite(lat) && isFinite(lng) &&
+    lat >= -90 && lat <= 90 &&
+    lng >= -180 && lng <= 180
+  );
+}
+
 export const useTripStore = create<TripStore>((set) => ({
   isTracking: false,
   gpsPoints: [],
@@ -24,13 +32,15 @@ export const useTripStore = create<TripStore>((set) => ({
     set((state) => ({
       gpsPoints: [
         ...state.gpsPoints,
-        ...locations.map((l) => ({
-          lat: l.coords.latitude,
-          lng: l.coords.longitude,
-          speed: Math.max(0, (l.coords.speed ?? 0) * 3.6), // m/s → km/h
-          altitude: l.coords.altitude ?? 0,
-          timestamp: l.timestamp,
-        })),
+        ...locations
+          .filter((l) => isValidCoord(l.coords.latitude, l.coords.longitude))
+          .map((l) => ({
+            lat: l.coords.latitude,
+            lng: l.coords.longitude,
+            speed: Math.max(0, (l.coords.speed ?? 0) * 3.6), // m/s → km/h
+            altitude: l.coords.altitude ?? 0,
+            timestamp: l.timestamp,
+          })),
       ],
     })),
   resetTrip: () => set({ gpsPoints: [], currentTrip: null, isTracking: false, startTime: null }),
