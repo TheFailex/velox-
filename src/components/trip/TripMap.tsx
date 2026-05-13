@@ -23,16 +23,6 @@ function buildMapHtml(route: GPSPoint[], height: number): string {
     body{background:#14141C;overflow:hidden}
     #map{width:100%;height:${height}px;background:#14141C}
     .leaflet-control-attribution,.leaflet-control-zoom{display:none!important}
-    .km-marker{
-      background:rgba(10,10,15,0.85);
-      color:#8E8EA0;
-      font-size:10px;
-      font-weight:700;
-      border-radius:10px;
-      padding:2px 5px;
-      border:1px solid rgba(255,255,255,0.15);
-      white-space:nowrap;
-    }
   </style>
 </head>
 <body>
@@ -90,7 +80,6 @@ function buildMapHtml(route: GPSPoint[], height: number): string {
   // ── Draw segments ────────────────────────────────────────────────────────
   var allLatLngs=[];
   var segments=buildKmSegments(route);
-  var kmIndex=0;
 
   for(var s=0;s<segments.length;s++){
     var seg=segments[s];
@@ -99,14 +88,6 @@ function buildMapHtml(route: GPSPoint[], height: number): string {
 
     L.polyline(latlngs,{color:color,weight:5,opacity:0.95,lineCap:'round',lineJoin:'round'}).addTo(map);
     allLatLngs=allLatLngs.concat(latlngs);
-
-    // Km marker at the start of each segment (except the very first)
-    if(s > 0 && s < segments.length){
-      kmIndex++;
-      var midPt=seg[0];
-      var icon=L.divIcon({className:'',html:'<div class="km-marker">'+kmIndex+' km</div>',iconAnchor:[18,10]});
-      L.marker([midPt.lat,midPt.lng],{icon:icon}).addTo(map);
-    }
   }
 
   // ── Start / end markers ──────────────────────────────────────────────────
