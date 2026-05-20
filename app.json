@@ -28,7 +28,7 @@
         "backgroundColor": "#0A0A0F"
       },
       "package": "com.failex.velox",
-      "versionCode": 29,
+      "versionCode": 30,
       "config": {
         "googleMaps": {
           "apiKey": "$EXPO_PUBLIC_GOOGLE_MAPS_KEY"
