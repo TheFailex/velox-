@@ -20,6 +20,8 @@ export async function setupNotifications(): Promise<void> {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),
@@ -38,8 +40,8 @@ export async function setupNotifications(): Promise<void> {
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
+  const result = await (Notifications.requestPermissionsAsync() as Promise<{ granted: boolean }>);
+  return result.granted;
 }
 
 export async function updateTripNotification(
