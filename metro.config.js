@@ -1,13 +1,23 @@
 const { getDefaultConfig } = require('expo/metro-config');
+const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// Supabase optionally imports OpenTelemetry via a dynamic import(variable)
-// which Hermes rejects at compile time. Stub it out with an empty module.
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === '@opentelemetry/api') {
-    return { type: 'empty' };
+  // @supabase/supabase-js ships an .mjs version that contains
+  //   import(/* webpackIgnore *//* turbopackIgnore */ OTEL_PKG)
+  // Hermes can't compile dynamic imports with variable specifiers.
+  // The .cjs version is identical but uses require() instead, so redirect to it.
+  if (moduleName === '@supabase/supabase-js') {
+    return {
+      type: 'sourceFile',
+      filePath: path.resolve(
+        __dirname,
+        'node_modules/@supabase/supabase-js/dist/index.cjs'
+      ),
+    };
   }
+
   return context.resolveRequest(context, moduleName, platform);
 };
 
